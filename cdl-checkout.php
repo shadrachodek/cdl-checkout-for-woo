@@ -1,16 +1,16 @@
 <?php
 /**
  * Plugin Name: CDL Checkout for WooCommerce
- * Plugin URI: https://www.cdlcheckout.com
- * Author: Shadrach Odekhiran
- * Author URI: https://shadrachodek.com
+ * Plugin URI: https://www.creditdirect.ng
+ * Author: Credit Direct
+ * Author URI: https://www.creditdirect.ng
  * Description: WooCommerce payment gateway for CDL Checkout
- * Version: 1.4.1
+ * Version: 1.4.2
  * License: GPL-2.0+
  * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
  * Text Domain: cdl-checkout
- * WC requires at least: 3.0.0
- * WC tested up to: 5.5
+ * WC requires at least: 7.0
+ * WC tested up to: 8.3
  * Domain Path: /languages
 */
 
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 define( 'WC_CDL_CHECKOUT_MAIN_FILE', __FILE__ );
 define( 'WC_CDL_CHECKOUT_URL', untrailingslashit( plugins_url( '/', __FILE__ ) ) );
 
-define( 'WC_CDL_CHECKOUT_VERSION', '1.4.1' );
+define( 'WC_CDL_CHECKOUT_VERSION', '1.4.2' );
 
 
 /**

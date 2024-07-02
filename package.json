@@ -1,0 +1,15 @@
+{
+  "name": "cdl-checkout",
+  "description": "WooCommerce payment gateway for CDL Checkout",
+  "version": "1.4.2",
+  "main": "assets/js/blocks.js",
+  "scripts": {
+    "build": "wp-scripts build assets/js/blocks.js --output-path=assets/js/block",
+    "start": "wp-scripts start"
+  },
+  "author": "Shadrach Odekhiran",
+  "license": "GPL-2.0-or-later",
+  "devDependencies": {
+    "@wordpress/scripts": "^24.6.0"
+  }
+}

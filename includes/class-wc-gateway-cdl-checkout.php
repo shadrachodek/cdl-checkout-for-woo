@@ -35,9 +35,9 @@ class WC_Gateway_CdlCheckout extends WC_Payment_Gateway {
 
         // Hooks
         add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts' ) );
+        add_action('admin_enqueue_scripts', array( $this, 'admin_scripts' ));
         add_action('woocommerce_receipt_' . $this->id, array($this, 'receipt_page'));
         add_action( 'admin_notices', array( $this, 'admin_notices' ) );
-        add_action('woocommerce_api_wc_gateway_' . $this->id, array($this, 'check_response'));
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
 
         // Webhook listener/API hook.
@@ -56,6 +56,9 @@ class WC_Gateway_CdlCheckout extends WC_Payment_Gateway {
 
     }
 
+    /**
+     * Initialise Gateway Settings Form Fields.
+     */
     public function init_form_fields() {
         $this->form_fields = array(
             'enabled' => array(
@@ -115,6 +118,11 @@ class WC_Gateway_CdlCheckout extends WC_Payment_Gateway {
         );
     }
 
+    /**
+     * Check if  CDL Checkout Payment is enabled.
+     *
+     * @return bool
+     */
     public function is_available() {
         if ('yes' === $this->enabled) {
             if (!($this->public_key && $this->secret_key)) {
@@ -156,9 +164,12 @@ class WC_Gateway_CdlCheckout extends WC_Payment_Gateway {
             }
             ?>
         </h2>
-
         <h4>
-            <strong><?php printf( __( 'Optional: To avoid situations where bad network makes it impossible to verify transactions, set your webhook URL <a href="%1$s" target="_blank" rel="noopener noreferrer">here</a> to the URL below<span style="color: red"><pre><code>%2$s</code></pre></span>', 'cdl-checkout' ), '#', WC()->api_request_url( 'Cdl_Checkout_WC_Payment_Webhook' ) ); ?></strong>
+            <strong>
+                <?php
+                $webhook_url = untrailingslashit( WC()->api_request_url( 'Cdl_Checkout_WC_Payment_Webhook' ) );
+                printf( __( 'Optional: To avoid situations where bad network makes it impossible to verify transactions, set your webhook URL <a href="%1$s" target="_blank" rel="noopener noreferrer">here</a> to the URL below<span style="color: red; display: flex"><pre><code id="webhook-url">%2$s</code></pre><button role="button" id="copy-webhook-url" style="cursor: pointer; margin-left: 15px; padding: 0  8px">Copy</button></span>', 'cdl-checkout' ), 'https://www.creditdirect.ng', esc_html( $webhook_url ) ); ?>
+            </strong>
         </h4>
 
         <?php
@@ -196,7 +207,9 @@ class WC_Gateway_CdlCheckout extends WC_Payment_Gateway {
 
     }
 
-    // Enqueue the payment scripts
+    /**
+     * Enqueue the payment scripts
+     */
     public function payment_scripts() {
         if ( isset( $_GET['pay_for_order'] ) || ! is_checkout_pay_page() ) {
             return;
@@ -236,7 +249,29 @@ class WC_Gateway_CdlCheckout extends WC_Payment_Gateway {
         }
     }
 
-    // Process the payment
+    /**
+     * Enqueue admin scripts.
+     */
+    public function admin_scripts($hook) {
+
+        if ('woocommerce_page_wc-settings' !== $hook) {
+            return;
+        }
+
+        wp_enqueue_script(
+                'wp-cdl-checkout-admin-script',
+                plugins_url( 'assets/js/cdl-checkout-admin.js', WC_CDL_CHECKOUT_MAIN_FILE ),
+                array('jquery'),
+                WC_CDL_CHECKOUT_VERSION,
+                true
+        );
+
+
+    }
+
+    /**
+     * Process the payment
+     */
     public function process_payment($order_id) {
         $order = wc_get_order($order_id);
 
@@ -250,12 +285,6 @@ class WC_Gateway_CdlCheckout extends WC_Payment_Gateway {
         );
     }
 
-    public function check_response() {
-        $post_data = file_get_contents('php://input');
-        error_log($post_data);
-
-
-    }
 
     public function process_webhooks() {
 
@@ -270,9 +299,7 @@ class WC_Gateway_CdlCheckout extends WC_Payment_Gateway {
 
         $checkoutTransactionId = sanitize_text_field($response['checkoutTransactionId']);
 
-
-
-
+        // query order by checkout transaction Id
         $query = new WC_Order_Query(array(
             'meta_key'    => '_checkout_transaction_id',
             'meta_value'  => $checkoutTransactionId,
@@ -330,14 +357,12 @@ class WC_Gateway_CdlCheckout extends WC_Payment_Gateway {
 
         }
 
-
         $logger->error("Invalid data received at: $timestamp", $log_context);
 
         header('HTTP/1.1 400 Bad Request');
         echo json_encode(['status' => 'error', 'message' => 'Invalid data received']);
         exit;
     }
-
 
     protected function is_autocomplete_order_enabled( $order ) {
         $autocomplete_order = false;
@@ -375,9 +400,19 @@ class WC_Gateway_CdlCheckout extends WC_Payment_Gateway {
         return $result;
     }
 
+    // signed a transaction request
     private function sign_transaction($transaction, $private_key) {
         $message = $transaction['sessionId'] . $transaction['customerEmail'] . $transaction['totalAmount'];
         return hash_hmac('sha256', $message, $private_key);
+    }
+
+    // logo url
+    public function get_logo_url()
+    {
+
+        $url = WC_HTTPS::force_https_url(plugins_url('assets/images/cdl-checkout-wc.jpg', WC_CDL_CHECKOUT_MAIN_FILE));
+
+        return apply_filters('wc_cdl_checkout_gateway_icon_url', $url, $this->id);
     }
   
 }
